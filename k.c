@@ -9,6 +9,7 @@ struct block_t {
 	struct block_t *next;
 	bool free;
 	size_t size;
+	char mem[];
 } *head = (void *)all_k_mem;
 
 void init()
@@ -18,32 +19,41 @@ void init()
 	head->next = NULL;
 }
 
-void split(struct block_t *in, size_t nbytes) //brake a piece of all_k_mem, like the chocolate I shouldn't have eaten last night...
+/* size should be sizeof(*in) + bytes to allocate */
+void split(struct block_t *in, size_t size) //brake a piece of all_k_mem, like the chocolate I shouldn't have eaten last night...
 {
-	struct block_t *b = (void*)((void*)in + nbytes + sizeof(struct block_t));
-	b->size = in->size - sizeof(struct block_t) - nbytes;
-	b->free = true;
-	b->next = NULL;
+	struct block_t *new = in + size;
+
+	new->size = in->size - size;
+	new->free = true;
+	new->next = NULL;
+
 	in->free = false;
-	in->size = nbytes - sizeof(struct block_t);
-	in->next = b;
+	in->size = size - sizeof(*in);
+	in->next = new;
 }
 
+/* init must be run before first use of this! */
 void *mymalloc(size_t nbytes) //alocate a piece of all_k_mem, because memory leaks are not fun
 {
-	struct block_t *b;
-	if(!head->size) init();
-	b = head; //start at the start of the all_k_mem
-	for(; b->size < nbytes || !b->free || b->size > nbytes; b = b->next){ //walk around the block.
-		if(b->size == nbytes && b->free){ //fits perfectly!, unlike that top I bought.
-			b->free = false;
-			return (void*)b;
+	struct block_t *b = head; //start at the start of the all_k_mem
+	size_t split_size = nbytes + sizeof(*b);
+	while(b) {
+		if(b->free == true) {
+			if(b->size > split_size) {
+				//gotta split
+				split(b, split_size);
+				return b->mem;
+			} else if(b->size == nbytes) {
+				b->free = false;
+				return b->mem;
+				//fits perfectly!, unlike that top I bought.
+			}
+			//doesn't fit in this one.
 		}
-		else if(b->size > nbytes && b->free){
-			split(b, nbytes);
-			return b;
-		}
+		b = b->next; //walk around the block.
 	}
+	// could not find chunk big enough to satisfy request
 	return NULL;
 }
 
