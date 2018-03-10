@@ -9,7 +9,7 @@ struct block_t {
 	struct block_t *next;
 	bool free;
 	size_t size;
-} *head = all_k_mem;
+} *head = (void *)all_k_mem;
 
 void init()
 {
