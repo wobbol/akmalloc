@@ -38,23 +38,25 @@ void *mymalloc(size_t nbytes) //alocate a piece of all_k_mem, because memory lea
 {
 	struct block_t *b = head; //start at the start of the all_k_mem
 	size_t split_size = nbytes + sizeof(*b);
+
 	while(b) {
-		if(b->free == true) {
-			if(b->size > split_size) {
-				//gotta split
-				split(b, split_size);
-				return b->mem;
-			} else if(b->size == nbytes) {
-				b->free = false;
-				return b->mem;
-				//fits perfectly!, unlike that top I bought.
-			}
-			//doesn't fit in this one.
+		while(b->free == false) {
+			b = b->next;
+			if(!b)
+				return NULL;
 		}
-		b = b->next; //walk around the block.
+		if(b->size > split_size) {
+			//gotta split
+			split(b, split_size);
+			return b->mem;
+		} else if(b->size >= nbytes) {
+			// Fits perfectly!, unlike that top I bought or I always need a 28" band, but sometimes settle for 30".
+			b->free = false;
+			return b->mem;
+		}
+		b = b->next; // This free block wasn't big enough.
 	}
-	// could not find chunk big enough to satisfy request
-	return NULL;
+	return NULL; // TODO: Something like errno could be set here so the calling code can try to fix it.
 }
 
 void joinFreeBlocks() //glue free blocks beside each other
@@ -62,7 +64,7 @@ void joinFreeBlocks() //glue free blocks beside each other
 	struct block_t *b = head;
 	for(; b->next && b->next->next; b = b->next){
 		if(b->free && b->next->free){
-			b->size += (b->next->size)+sizeof(struct block_t);
+			b->size += b->next->size + sizeof(*b);
 			b->next = b->next->next;
 		}
 	}
@@ -70,11 +72,15 @@ void joinFreeBlocks() //glue free blocks beside each other
 
 void myfree(void *ptr)
 {
-	if((void*)all_k_mem <= ptr && ptr >= (void*)all_k_mem + sizeof(all_k_mem)){  //check if the pointer is in all_k_mem, something... something fishy.
-		struct block_t *b = ptr;
-		b->free = true;
-		joinFreeBlocks();
-	}
+	if( // eh, don't know if I like this style
+		ptr < (void *)all_k_mem ||
+		ptr > (void *)(all_k_mem + sizeof(all_k_mem))
+	) //check if the pointer is in all_k_mem, something... something fishy.
+		return;
+
+	struct block_t *b = ptr;
+	b->free = true;
+	joinFreeBlocks();
 }
 static void print_ruler(int n)
 {
@@ -83,6 +89,7 @@ static void print_ruler(int n)
 		printf("%c", hex[i%15]);
 	printf("\n");
 }
+
 static void print_block(struct block_t *b)
 {
 	printf("%s ",b->free ? "freeee!":"notfree");
@@ -90,13 +97,22 @@ static void print_block(struct block_t *b)
 	printf("next: %p\n", b->next);
 }
 
+static void print_all_child_block(struct block_t *b)
+{
+	while(b) {
+		print_block(b);
+		b = b->next;
+	}
+}
+
 void main(void)
 {
 	const int n = 50;
 	init();
-	print_block(head);
+	print_all_child_block(head);
+	printf("\n");
 	char *test = mymalloc(sizeof(*test) * (n + 1));
-	print_block(head);
+	print_all_child_block(head);
 	int i = 0;
 	while(i < n) {
 		test[i] = 'a';
