@@ -1,6 +1,7 @@
-#include "ak_print.h"
 #include <stdbool.h>
 #include <stdio.h>
+#include "ak_print.h"
+#include "ak.h"
 
 static void print_ruler(int n)
 {
@@ -18,7 +19,6 @@ void print_memory(void *ptr, size_t nbytes)
 		printf("%X",u[i]);
 	}
 }
-void print_memory(void *ptr, size_t nbytes)
 void print_string(void *ptr, size_t nbytes)
 {
 	char *s = ptr;
@@ -32,8 +32,6 @@ void print_string(void *ptr, size_t nbytes)
  * return - weather or not the child block would be
  * printed given the options in `o`
  */
-void print_memory(void *ptr, size_t nbytes)
-void print_string(void *ptr, size_t nbytes)
 bool print_block(struct block_t *b, union print_options_t *const o)
 {
 	if((o->free && b->free) || (o->used && !b->free)) {
@@ -69,9 +67,6 @@ bool print_block(struct block_t *b, union print_options_t *const o)
 	return (o->free && b->next->free) || (o->used && !b->next->free);
 }
 
-void print_memory(void *ptr, size_t nbytes)
-void print_string(void *ptr, size_t nbytes)
-bool print_block(struct block_t *b, union print_options_t *const o)
 void debug_mem_print(void *ptr, union print_options_t *const o, char *note)
 {
 	if(!(o->free || o->used))

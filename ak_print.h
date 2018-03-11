@@ -1,4 +1,7 @@
+#ifndef ak_print_header_
+#define ak_print_header_
 #include <stdbool.h>
+#include "ak.h"
 
 union print_options_t {
 	int flags;
@@ -18,3 +21,4 @@ void print_memory(void *ptr, size_t nbytes);
 void print_string(void *ptr, size_t nbytes);
 bool print_block(struct block_t *b, union print_options_t *const o);
 void debug_mem_print(void *ptr, union print_options_t *const o, char *note);
+#endif

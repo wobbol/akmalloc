@@ -4,23 +4,25 @@
 #include <stdbool.h>
 #include "ak_print.h"
 
-static char all_k_mem[4096];
+char all_k_mem[4096];
 
-struct block_t {
-	struct block_t *next;
-	bool free;
-	size_t size;
-	char mem[];
-} *head = (void *)all_k_mem;
+struct block_t *head;
 
+/*
+ * head       - should be initialized to the beginning of the kernel heap
+ * head->size - size of the workable heap memory
+ * head->free - setting this here allows for a simpler allocateor
+ * head->next - all kernel heap allocations are below head.
+ */
 void init()
 {
-	head->size = (sizeof(all_k_mem) - sizeof(struct block_t));
+	head = (void *)all_k_mem;
+	head->size = (sizeof(all_k_mem) - sizeof(*head));
 	head->free = true;
 	head->next = NULL;
 }
 
-/* size should be sizeof(*in) + bytes to allocate */
+/* size includes sizeof(struct block_t) */
 void split(struct block_t *in, size_t size) //brake a piece of all_k_mem, like the chocolate I shouldn't have eaten last night...
 {
 	struct block_t *new = (void *)in + size;
@@ -35,7 +37,7 @@ void split(struct block_t *in, size_t size) //brake a piece of all_k_mem, like t
 }
 
 /* init must be run before first use of this! */
-void *mymalloc(size_t nbytes) //alocate a piece of all_k_mem, because memory leaks are not fun
+void *mymalloc(size_t nbytes) //allocate a piece of all_k_mem, because memory leaks are not fun
 {
 	struct block_t *b = head; //start at the start of the all_k_mem
 	size_t split_size = nbytes + sizeof(*b);
@@ -105,7 +107,7 @@ void main(void)
 {
 	const int t_a_bound = 50;
 	init();
-	union print_options_t option = { 
+	union print_options_t option = {
 		.block_f = 1,
 		.block_raw = 1,
 		.mem_f = 1,
