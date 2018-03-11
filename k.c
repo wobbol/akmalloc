@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include "ak_print.h"
 
 static char all_k_mem[4096];
 
@@ -26,7 +27,7 @@ void split(struct block_t *in, size_t size) //brake a piece of all_k_mem, like t
 
 	new->size = in->size - size;
 	new->free = true;
-	new->next = NULL;
+	new->next = in->next;
 
 	in->free = false;
 	in->size = size - sizeof(*in);
@@ -83,58 +84,47 @@ void myfree(void *ptr)
 	joinFreeBlocks();
 }
 
-static void print_ruler(int n)
-{
-	const char hex[] = "123456789abcdef";
-	for(int i = 0; i < n; ++i)
-		printf("%c", hex[i%15]);
-	printf("\n");
-}
-
-static void print_block(struct block_t *b)
-{
-	printf("%s ",b->free ? "freeee!":"notfree");
-	printf("bytes: %5.lu ",b->size);
-	printf("first/last byte: %c %c ", b->mem[0], b->mem[b->size - 1]);
-	printf("next: %p\n", b->next);
-}
-
-static void print_all_child_block(struct block_t *b)
-{
-	printf("\n");
-	while(b) {
-		print_block(b);
-		b = b->next;
-	}
-	printf("\n");
-}
 char *test(char ch, size_t len)
 {
 	char *test = mymalloc(sizeof(*test) * (len + 1));
-	print_all_child_block(head);
+	//print_all_child_block(head);
 	int i = 0;
 	while(i < len) {
 		test[i] = ch;
 		++i;
 	}
 	test[i] = '\0';
-	print_ruler(len);
-	printf("%s\n", test);
+	//print_what(test, '\0', NULL);
+	//print_ruler(len);
+	//printf("%s\n", test);
 	return test;
 }
+
 
 void main(void)
 {
 	const int t_a_bound = 50;
 	init();
-	print_all_child_block(head);
-	char *a = test('a', 50);
-	char *b = test('b', 53);
-	myfree(a);
-	char *c = test('c', 32);
-	char *d = test('d', 32);
-	myfree(b);
-	char *e = test('e', 32);
-	char *f = test('f', 32);
+	union print_options_t option = { 
+		.block_f = 1,
+		.block_raw = 1,
+		.mem_f = 1,
+		.mem_raw = 1,
+		.child = 1,
+	};
+	//print_all_child_block(head);
+	char *a = test('a', 50);// print_what(a, "after a", &option);
+	char *b = test('b', 53);// print_what(a,"after b",&option);
+	//myfree(a); print_what(a,"after free(a)", &option);
+	char *c = test('c', 20); debug_mem_print(a, &option, "after c");
+	//char *d = test('d', 32);
+	//print_what(NULL,"after d");
+	//myfree(b);
+	//print_what(NULL,"after free(b)");
+	//char *e = test('e', 32);
+	//print_what(NULL,"after e");
+	//char *f = test('f', 32);
+	//print_what(NULL,"after f");
+	//print_memory(head,150);
 
 }
